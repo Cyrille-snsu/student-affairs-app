@@ -1,386 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import Layout from './components/Layout';
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import app from '../firebaseConfig';
 
-interface RadioButtonProps {
-  selected: boolean;
-  onPress: () => void;
-  label: string;
-}
-
-interface FormData {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  course: string;
-  yearLevel: string;
-  studentNumber: string;
-  hasSmartphone: string;
-  hasTablet: string;
-  hasLaptop: string;
-  hasDesktop: string;
-  hasInternet: string;
-  isIndigenous: boolean;
-  isPWD: boolean;
-  isRenting: boolean;
-  address: string;
-  contactNumber: string;
-  email: string;
-  transportation: string;
-  dailyFare: string;
-  monthlyRent: string;
-}
-
-export default function AddStudent() {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    course: '',
-    yearLevel: '',
-    studentNumber: '',
-    hasSmartphone: '',
-    hasTablet: '',
-    hasLaptop: '',
-    hasDesktop: '',
-    hasInternet: '',
-    isIndigenous: false,
-    isPWD: false,
-    isRenting: false,
-    address: '',
-    contactNumber: '',
-    email: '',
-    transportation: '',
-    dailyFare: '',
-    monthlyRent: '',
-  });
-
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setFormData({
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        course: '',
-        yearLevel: '',
-        studentNumber: '',
-        hasSmartphone: '',
-        hasTablet: '',
-        hasLaptop: '',
-        hasDesktop: '',
-        hasInternet: '',
-        isIndigenous: false,
-        isPWD: false,
-        isRenting: false,
-        address: '',
-        contactNumber: '',
-        email: '',
-        transportation: '',
-        dailyFare: '',
-        monthlyRent: '',
-      });
-    }, 3000);
-  };
-
-  const RadioButton: React.FC<RadioButtonProps> = ({ selected, onPress, label }) => (
-    <TouchableOpacity style={styles.radioOption} onPress={onPress}>
-      <View style={[styles.radio, selected && styles.radioSelected]}>
-        {selected && <View style={styles.radioInner} />}
-      </View>
-      <Text style={styles.radioLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-
-  return (
-    <Layout pageTitle="Pages / Add Student">
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {showSuccess && (
-          <View style={styles.successMessage}>
-            <Text style={styles.successText}>Student information successfully added!</Text>
-            <TouchableOpacity onPress={() => setShowSuccess(false)}>
-              <Text style={styles.closeButton}>×</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Student Information</Text>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>FIRST NAME</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.firstName}
-              onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-              placeholder="Enter first name"
-            />
-          </View>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>MIDDLE NAME</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.middleName}
-              onChangeText={(text) => setFormData({ ...formData, middleName: text })}
-              placeholder="Enter middle name"
-            />
-          </View>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>LAST NAME</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.lastName}
-              onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-              placeholder="Enter last name"
-            />
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>COURSE</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.course}
-              onChangeText={(text) => setFormData({ ...formData, course: text })}
-              placeholder="Select course"
-            />
-          </View>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>YEAR LEVEL</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.yearLevel}
-              onChangeText={(text) => setFormData({ ...formData, yearLevel: text })}
-              placeholder="Select year level"
-            />
-          </View>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>STUDENT NUMBER</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.studentNumber}
-              onChangeText={(text) => setFormData({ ...formData, studentNumber: text })}
-              placeholder="Enter student number"
-            />
-          </View>
-        </View>
-
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Devices</Text>
-          
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Do you have a smartphone?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.hasSmartphone === 'yes'}
-                onPress={() => setFormData({ ...formData, hasSmartphone: 'yes' })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={formData.hasSmartphone === 'no'}
-                onPress={() => setFormData({ ...formData, hasSmartphone: 'no' })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Do you have a tablet?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.hasTablet === 'yes'}
-                onPress={() => setFormData({ ...formData, hasTablet: 'yes' })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={formData.hasTablet === 'no'}
-                onPress={() => setFormData({ ...formData, hasTablet: 'no' })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Do you have a laptop?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.hasLaptop === 'yes'}
-                onPress={() => setFormData({ ...formData, hasLaptop: 'yes' })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={formData.hasLaptop === 'no'}
-                onPress={() => setFormData({ ...formData, hasLaptop: 'no' })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Do you have a desktop computer?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.hasDesktop === 'yes'}
-                onPress={() => setFormData({ ...formData, hasDesktop: 'yes' })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={formData.hasDesktop === 'no'}
-                onPress={() => setFormData({ ...formData, hasDesktop: 'no' })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Do you have internet access at home?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.hasInternet === 'yes'}
-                onPress={() => setFormData({ ...formData, hasInternet: 'yes' })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={formData.hasInternet === 'no'}
-                onPress={() => setFormData({ ...formData, hasInternet: 'no' })}
-                label="No"
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Additional Information</Text>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Are you an Indigenous Person?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.isIndigenous}
-                onPress={() => setFormData({ ...formData, isIndigenous: true })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={!formData.isIndigenous}
-                onPress={() => setFormData({ ...formData, isIndigenous: false })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Are you a Person with Disability (PWD)?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.isPWD}
-                onPress={() => setFormData({ ...formData, isPWD: true })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={!formData.isPWD}
-                onPress={() => setFormData({ ...formData, isPWD: false })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>Are you renting a house/apartment/boarding house?</Text>
-            <View style={styles.radioGroup}>
-              <RadioButton
-                selected={formData.isRenting}
-                onPress={() => setFormData({ ...formData, isRenting: true })}
-                label="Yes"
-              />
-              <RadioButton
-                selected={!formData.isRenting}
-                onPress={() => setFormData({ ...formData, isRenting: false })}
-                label="No"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>ADDRESS</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.address}
-              onChangeText={(text) => setFormData({ ...formData, address: text })}
-              placeholder="Enter complete address"
-              multiline
-            />
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>CONTACT NUMBER</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.contactNumber}
-              onChangeText={(text) => setFormData({ ...formData, contactNumber: text })}
-              placeholder="Enter contact number"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>EMAIL ADDRESS</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
-              placeholder="Enter email address"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>MODE OF TRANSPORTATION</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.transportation}
-              onChangeText={(text) => setFormData({ ...formData, transportation: text })}
-              placeholder="Enter mode of transportation"
-            />
-          </View>
-
-          <View style={styles.fullWidth}>
-            <Text style={styles.label}>DAILY FARE</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.dailyFare}
-              onChangeText={(text) => setFormData({ ...formData, dailyFare: text })}
-              placeholder="Enter daily fare amount"
-              keyboardType="numeric"
-            />
-          </View>
-
-          {formData.isRenting && (
-            <View style={styles.fullWidth}>
-              <Text style={styles.label}>MONTHLY RENT</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.monthlyRent}
-                onChangeText={(text) => setFormData({ ...formData, monthlyRent: text })}
-                placeholder="Enter monthly rent amount"
-                keyboardType="numeric"
-              />
-            </View>
-          )}
-        </View>
-
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </Layout>
-  );
-}
+const db = getFirestore(app);
 
 const styles = StyleSheet.create({
   container: {
@@ -489,4 +113,362 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-}); 
+});
+
+interface RadioButtonProps {
+  selected: boolean;
+  onPress: () => void;
+  label: string;
+}
+
+interface FormData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  course: string;
+  yearLevel: string;
+  studentNumber: string;
+  hasSmartphone: string;
+  hasTablet: string;
+  hasLaptop: string;
+  hasDesktop: string;
+  hasInternet: string;
+  isIndigenous: boolean;
+  isPWD: boolean;
+  isRenting: boolean;
+  address: string;
+  contactNumber: string;
+  email: string;
+  transportation: string;
+  dailyFare: string;
+  monthlyRent: string;
+}
+
+export default function AddStudent() {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData & { status?: string }>({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    course: '',
+    yearLevel: '',
+    studentNumber: '',
+    hasSmartphone: '',
+    hasTablet: '',
+    hasLaptop: '',
+    hasDesktop: '',
+    hasInternet: '',
+    isIndigenous: false,
+    isPWD: false,
+    isRenting: false,
+    address: '',
+    contactNumber: '',
+    email: '',
+    transportation: '',
+    dailyFare: '',
+    monthlyRent: '',
+    status: 'Uncleared',
+  });
+
+  const handleSubmit = async () => {
+    setShowError(null);
+    try {
+      await addDoc(collection(db, 'students'), { ...formData, status: 'Uncleared' });
+      setShowSuccess(true);
+      Alert.alert('Success', 'Student information successfully added!');
+      setTimeout(() => {
+        setShowSuccess(false);
+        setFormData({
+          firstName: '',
+          middleName: '',
+          lastName: '',
+          course: '',
+          yearLevel: '',
+          studentNumber: '',
+          hasSmartphone: '',
+          hasTablet: '',
+          hasLaptop: '',
+          hasDesktop: '',
+          hasInternet: '',
+          isIndigenous: false,
+          isPWD: false,
+          isRenting: false,
+          address: '',
+          contactNumber: '',
+          email: '',
+          transportation: '',
+          dailyFare: '',
+          monthlyRent: '',
+        });
+      }, 3000);
+    } catch (err) {
+      setShowError('Failed to add student. ' + (err instanceof Error ? err.message : String(err)));
+      Alert.alert('Error', 'Failed to add student. ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+
+  const RadioButton: React.FC<RadioButtonProps> = ({ selected, onPress, label }) => (
+    <TouchableOpacity style={styles.radioOption} onPress={onPress}>
+      <View style={[styles.radio, selected && styles.radioSelected]}>
+        {selected && <View style={styles.radioInner} />}
+      </View>
+      <Text style={styles.radioLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Layout>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.formContainer}>
+          <Text style={styles.sectionTitle}>Student Information</Text>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>FIRST NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.firstName}
+              onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+              placeholder="Enter first name"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>MIDDLE NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.middleName}
+              onChangeText={(text) => setFormData({ ...formData, middleName: text })}
+              placeholder="Enter middle name"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>LAST NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.lastName}
+              onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+              placeholder="Enter last name"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>COURSE</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.course}
+              onChangeText={(text) => setFormData({ ...formData, course: text })}
+              placeholder="Select course"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>YEAR LEVEL</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.yearLevel}
+              onChangeText={(text) => setFormData({ ...formData, yearLevel: text })}
+              placeholder="Select year level"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>STUDENT NUMBER</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.studentNumber}
+              onChangeText={(text) => setFormData({ ...formData, studentNumber: text })}
+              placeholder="Enter student number"
+            />
+          </View>
+        </View>
+        <View style={styles.formContainer}>
+          <Text style={styles.sectionTitle}>Devices</Text>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Do you have a smartphone?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.hasSmartphone === 'yes'}
+                onPress={() => setFormData({ ...formData, hasSmartphone: 'yes' })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={formData.hasSmartphone === 'no'}
+                onPress={() => setFormData({ ...formData, hasSmartphone: 'no' })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Do you have a tablet?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.hasTablet === 'yes'}
+                onPress={() => setFormData({ ...formData, hasTablet: 'yes' })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={formData.hasTablet === 'no'}
+                onPress={() => setFormData({ ...formData, hasTablet: 'no' })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Do you have a laptop?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.hasLaptop === 'yes'}
+                onPress={() => setFormData({ ...formData, hasLaptop: 'yes' })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={formData.hasLaptop === 'no'}
+                onPress={() => setFormData({ ...formData, hasLaptop: 'no' })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Do you have a desktop computer?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.hasDesktop === 'yes'}
+                onPress={() => setFormData({ ...formData, hasDesktop: 'yes' })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={formData.hasDesktop === 'no'}
+                onPress={() => setFormData({ ...formData, hasDesktop: 'no' })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Do you have internet access at home?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.hasInternet === 'yes'}
+                onPress={() => setFormData({ ...formData, hasInternet: 'yes' })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={formData.hasInternet === 'no'}
+                onPress={() => setFormData({ ...formData, hasInternet: 'no' })}
+                label="No"
+              />
+            </View>
+          </View>
+        </View>
+        <View style={styles.formContainer}>
+          <Text style={styles.sectionTitle}>Additional Information</Text>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Are you an Indigenous Person?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.isIndigenous}
+                onPress={() => setFormData({ ...formData, isIndigenous: true })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={!formData.isIndigenous}
+                onPress={() => setFormData({ ...formData, isIndigenous: false })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Are you a Person with Disability (PWD)?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.isPWD}
+                onPress={() => setFormData({ ...formData, isPWD: true })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={!formData.isPWD}
+                onPress={() => setFormData({ ...formData, isPWD: false })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>Are you renting a house/apartment/boarding house?</Text>
+            <View style={styles.radioGroup}>
+              <RadioButton
+                selected={formData.isRenting}
+                onPress={() => setFormData({ ...formData, isRenting: true })}
+                label="Yes"
+              />
+              <RadioButton
+                selected={!formData.isRenting}
+                onPress={() => setFormData({ ...formData, isRenting: false })}
+                label="No"
+              />
+            </View>
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>ADDRESS</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.address}
+              onChangeText={(text) => setFormData({ ...formData, address: text })}
+              placeholder="Enter complete address"
+              multiline
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>CONTACT NUMBER</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.contactNumber}
+              onChangeText={(text) => setFormData({ ...formData, contactNumber: text })}
+              placeholder="Enter contact number"
+              keyboardType="phone-pad"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>EMAIL ADDRESS</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.email}
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
+              placeholder="Enter email address"
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>MODE OF TRANSPORTATION</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.transportation}
+              onChangeText={(text) => setFormData({ ...formData, transportation: text })}
+              placeholder="Enter mode of transportation"
+            />
+          </View>
+          <View style={styles.fullWidth}>
+            <Text style={styles.label}>DAILY FARE</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.dailyFare}
+              onChangeText={(text) => setFormData({ ...formData, dailyFare: text })}
+              placeholder="Enter daily fare amount"
+              keyboardType="numeric"
+            />
+          </View>
+          {formData.isRenting && (
+            <View style={styles.fullWidth}>
+              <Text style={styles.label}>MONTHLY RENT</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.monthlyRent}
+                onChangeText={(text) => setFormData({ ...formData, monthlyRent: text })}
+                placeholder="Enter monthly rent amount"
+                keyboardType="numeric"
+              />
+            </View>
+          )}
+        </View>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Submit</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </Layout>
+  );
+}

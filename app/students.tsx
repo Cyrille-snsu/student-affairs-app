@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Layout from './components/Layout';
+import { getFirestore, collection, getDocs, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import app from '../firebaseConfig';
+
+const db = getFirestore(app);
 
 interface Student {
-  id: number;
-  name: string;
+  id: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
   email: string;
-  status: 'Cleared' | 'Not cleared';
+  status?: 'Cleared' | 'Not cleared'; // Optional for compatibility
 }
 
 interface Location {
@@ -15,34 +22,52 @@ interface Location {
   percentage: number;
 }
 
+import { router } from 'expo-router';
+
 export default function StudentsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const students: Student[] = [
-    { id: 1, name: 'Rashed Brigole', email: 'rbrigole2@ssct.edu.ph', status: 'Cleared' },
-    { id: 2, name: 'Nikko Maturan', email: 'nmaturan@ssct.edu.ph', status: 'Not cleared' },
-    { id: 3, name: 'Rovic Dean Pantilo', email: 'rpantilo4@ssct.edu.ph', status: 'Cleared' },
-    { id: 4, name: 'Juliet Bernadez', email: 'jbernadez@ssct.edu.ph', status: 'Cleared' },
-    { id: 5, name: 'Andrei Escanan', email: 'aescanan@ssct.edu.ph', status: 'Not cleared' },
-    { id: 6, name: 'Jomacar Salve', email: 'jsalve@ssct.edu.ph', status: 'Not cleared' },
-  ];
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, 'students'));
+      const studentsData: Student[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          firstName: data.firstName || '',
+          middleName: data.middleName || '',
+          lastName: data.lastName || '',
+          email: data.email || '',
+          status: data.status || 'Uncleared', // Default or fetched value
+        };
+      });
+      setStudents(studentsData);
+    } catch (error) {
+      setStudents([]);
+    }
+    setLoading(false);
+  };
 
-  const locations: Location[] = [
-    { name: 'Surigao City', percentage: 60 },
-    { name: 'Dinagat Islands', percentage: 10 },
-    { name: 'Badas', percentage: 100 },
-    { name: 'Boyongan', percentage: 100 },
-    { name: 'Timamana', percentage: 25 },
-    { name: 'Placer', percentage: 40 },
-  ];
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchStudents();
+    }, [])
+  );
 
   const totalPages = 6;
 
   return (
     <Layout pageTitle="Pages / Lists">
-      <ScrollView style={styles.container}>
-        <View style={styles.searchContainer}>
+      <ScrollView style={[styles.container, { paddingHorizontal: 12 }]}>
+        <View style={[styles.searchContainer, { margin: 12 }]}>
           <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
@@ -53,109 +78,55 @@ export default function StudentsList() {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.listTitle}>Lists</Text>
+
+          <View style={[styles.section, { margin: 12 }]}>
+            <Text style={styles.sectionTitle}>STUDENTS</Text>
+            <Text style={styles.sectionSubtitle}>STATUS</Text>
+            
+            {loading ? (
+              <ActivityIndicator size="large" color="#1B5E20" style={{ marginVertical: 40 }} />
+            ) : (
+              students
+                .filter(student =>
+                  (`${student.firstName} ${student.middleName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  student.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                )
+                 .map((student) => (
+                  <View key={student.id} style={styles.studentItem}>
+                    <View style={styles.studentInfo}>
+                      <View style={styles.avatar}>
+                        <Ionicons name="person" size={20} color="#666" />
+                      </View>
+                      <View>
+                        <Text style={styles.studentName}>{`${student.firstName} ${student.middleName} ${student.lastName}`.trim()}</Text>
+                        <Text style={styles.studentEmail}>{student.email}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.statusContainer}>
+                      <View style={[
+                        styles.statusBadge,
+                        { backgroundColor: student.status === 'Cleared' ? '#E8F5E9' : '#FFEBEE' }
+                      ]}>
+                        <Text style={[
+                          styles.statusText,
+                          { color: student.status === 'Cleared' ? '#1B5E20' : '#C62828' }
+                        ]}>
+                          {student.status}
+                        </Text>
+                      </View>
+                      <TouchableOpacity style={styles.editButton} onPress={() => router.push({ pathname: '/edit-student', params: { id: student.id } })}>
+                        <Text style={styles.editText}>Edit</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+          )}
+
+
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>STUDENTS</Text>
-          <Text style={styles.sectionSubtitle}>STATUS</Text>
-          
-          {students.map((student) => (
-            <View key={student.id} style={styles.studentItem}>
-              <View style={styles.studentInfo}>
-                <View style={styles.avatar}>
-                  <Ionicons name="person" size={20} color="#666" />
-                </View>
-                <View>
-                  <Text style={styles.studentName}>{student.name}</Text>
-                  <Text style={styles.studentEmail}>{student.email}</Text>
-                </View>
-              </View>
-              <View style={styles.statusContainer}>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: student.status === 'Cleared' ? '#E8F5E9' : '#FFEBEE' }
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    { color: student.status === 'Cleared' ? '#1B5E20' : '#C62828' }
-                  ]}>
-                    {student.status}
-                  </Text>
-                </View>
-                <TouchableOpacity style={styles.editButton}>
-                  <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-
-          <View style={styles.pagination}>
-            {[...Array(totalPages)].map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.pageButton,
-                  currentPage === index + 1 && styles.activePageButton
-                ]}
-                onPress={() => setCurrentPage(index + 1)}
-              >
-                <Text style={[
-                  styles.pageButtonText,
-                  currentPage === index + 1 && styles.activePageButtonText
-                ]}>
-                  {index + 1}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.pageButton}>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.addressTitle}>Address</Text>
-          <View style={styles.locationHeader}>
-            <Text style={styles.locationTitle}>Student location</Text>
-            <Text style={styles.percentageTitle}>PERCENTAGE</Text>
-          </View>
-          
-          {locations.map((location, index) => (
-            <View key={index} style={styles.locationItem}>
-              <Text style={styles.locationName}>{location.name}</Text>
-              <View style={styles.percentageContainer}>
-                <View style={[styles.percentageBar, { width: `${location.percentage}%` }]} />
-                <Text style={styles.percentageText}>{location.percentage}%</Text>
-              </View>
-            </View>
-          ))}
-
-          <View style={styles.pagination}>
-            {[...Array(totalPages)].map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.pageButton,
-                  currentPage === index + 1 && styles.activePageButton
-                ]}
-                onPress={() => setCurrentPage(index + 1)}
-              >
-                <Text style={[
-                  styles.pageButtonText,
-                  currentPage === index + 1 && styles.activePageButtonText
-                ]}>
-                  {index + 1}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.pageButton}>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </Layout>
+      </View>
+    </ScrollView>
+  </Layout>
   );
 }
 
@@ -163,12 +134,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingTop: 8,
+    paddingHorizontal: 0,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    margin: 20,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 40,
@@ -182,8 +154,9 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 0,
     paddingTop: 0,
+    paddingBottom: 0,
   },
   listTitle: {
     fontSize: 24,
@@ -192,15 +165,14 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#fff',
-    margin: 20,
-    marginTop: 0,
     borderRadius: 12,
-    padding: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.07,
+    shadowRadius: 3,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 14,
@@ -218,42 +190,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    minHeight: 56,
   },
   studentInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   studentName: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 2,
+    flexWrap: 'wrap',
+    maxWidth: 200,
   },
   studentEmail: {
     fontSize: 12,
     color: '#666',
+    maxWidth: 200,
+    flexWrap: 'wrap',
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 8,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    marginRight: 0,
+    minWidth: 68,
+    alignItems: 'center',
   },
   statusText: {
     fontSize: 12,

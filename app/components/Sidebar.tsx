@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useAuthUser from './useAuthUser';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -44,6 +45,8 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   const handleSignOut = () => {
     router.replace('/login');
   };
+
+  const user = useAuthUser();
 
   return (
     <View style={styles.container}>
@@ -91,7 +94,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           </View>
           <View style={styles.adminDetails}>
             <Text style={styles.adminTitle}>Admin</Text>
-            <Text style={styles.adminEmail}>studentaffairs@ssct.edu.ph</Text>
+            <Text style={styles.adminEmail}>{user?.email || 'Not logged in'}</Text>
           </View>
         </View>
         <TouchableOpacity 

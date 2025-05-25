@@ -1,16 +1,49 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import app from '../firebaseConfig';
 
 export default function Register() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    // TODO: Implement registration logic
-    router.back();
+  const handleRegister = async () => {
+    setError('');
+    if (!email || !password || !confirmPassword) {
+      setError('All fields are required.');
+      return;
+    }
+    if (!email.endsWith('@snsu.edu.ph')) {
+      setError('Only SNSU staff emails (@snsu.edu.ph) are allowed.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const auth = getAuth(app);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Save user info to Firestore
+      const db = require('firebase/firestore').getFirestore(app);
+      await require('firebase/firestore').addDoc(require('firebase/firestore').collection(db, 'users'), {
+        email,
+        fullName,
+        uid: userCredential.user.uid,
+        createdAt: new Date(),
+      });
+      setLoading(false);
+      router.back(); // Go back to login
+    } catch (err) {
+      setLoading(false);
+      setError('Registration failed. ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   const handleBackToLogin = () => {
@@ -18,7 +51,7 @@ export default function Register() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.logoContainer}>
         <Image 
           source={require('../assets/images/logo.png')}
@@ -74,8 +107,9 @@ export default function Register() {
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>CREATE ACCOUNT</Text>
+        {error ? <Text style={{ color: 'red', marginBottom: 12 }}>{error}</Text> : null}
+        <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={loading}>
+          <Text style={styles.registerButtonText}>{loading ? 'Creating...' : 'CREATE ACCOUNT'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -85,7 +119,7 @@ export default function Register() {
           <Text style={styles.backButtonText}>Already have an account? Sign In</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

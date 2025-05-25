@@ -1,18 +1,32 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, Switch, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import app from '../firebaseConfig';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    router.replace('/(tabs)');
+  const handleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const auth = getAuth(app);
+      await signInWithEmailAndPassword(auth, email, password);
+      setLoading(false);
+      router.replace('/(tabs)');
+    } catch (err) {
+      setLoading(false);
+      setError('Login failed. ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.logoContainer}>
         <Image 
           source={require('../assets/images/logo.png')}
@@ -63,11 +77,12 @@ export default function Login() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>SIGN IN</Text>
+        {error ? <Text style={{ color: 'red', marginBottom: 12 }}>{error}</Text> : null}
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+          <Text style={styles.loginButtonText}>{loading ? 'Signing in...' : 'SIGN IN'}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

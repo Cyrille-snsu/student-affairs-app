@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import app from '../firebaseConfig';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Layout from './components/Layout';
@@ -6,17 +8,20 @@ import Layout from './components/Layout';
 export default function AdminList() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data for admins - replace with actual data later
-  const admins = [
-    {
-      id: 1,
-      name: 'Rashed Brigole',
-      email: 'rbrigole2@ssct.edu.ph',
-      status: 'Active',
-      lastActive: 'Now'
-    },
-    // Add more admin users as needed
-  ];
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const db = getFirestore(app);
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const usersData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(usersData);
+    };
+    fetchUsers();
+  }, []);
 
   return (
     <Layout pageTitle="Pages / Admin List">
@@ -40,20 +45,18 @@ export default function AdminList() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Users</Text>
           
-          {admins.map((admin) => (
-            <View key={admin.id} style={styles.adminCard}>
+          {users.map((user) => (
+            <View key={user.id} style={styles.adminCard}>
               <View style={styles.adminInfo}>
                 <View style={styles.avatarContainer}>
                   <Ionicons name="person" size={24} color="#fff" />
                 </View>
                 <View style={styles.adminDetails}>
-                  <Text style={styles.adminName}>{admin.name}</Text>
-                  <Text style={styles.adminEmail}>{admin.email}</Text>
+                  <Text style={styles.adminName}>{user.fullName || user.email}</Text>
+                  <Text style={styles.adminEmail}>{user.email}</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
+
             </View>
           ))}
         </View>
